@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>واجهة دردشة مع مكالمات حقيقية</title>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  /* أنماط التصميم */
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #ffe6f0;
+    margin: 0;
+    padding: 0;
+  }
+  #login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  #login-container input {
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  #login-container button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    background-color: #ff66b2;
+    color: #fff;
+    cursor: pointer;
+  }
+  #chat-container {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+  }
+  #header {
+    background-color: #ff66b2;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+  }
+  #username-display {
+    cursor: pointer;
+    padding: 5px 10px;
+  }
+  #call-options {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: none;
+    flex-direction: column;
+    width: 150px;
+    z-index: 1000;
+  }
+  #call-options button {
+    padding: 10px;
+    border: none;
+    background-color: #fff;
+    cursor: pointer;
+    width: 100%;
+    text-align: right;
+  }
+  #call-options button:hover {
+    background-color: #ffe0f0;
+  }
+  #messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #ffe6f0;
+    display: flex;
+    flex-direction: column;
+  }
+  #input-area {
+    display: flex;
+    padding: 10px;
+    background-color: #ffe6f0;
+  }
+  #message-input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+  #send-button {
+    padding: 10px 20px;
+    margin-left: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #ff66b2;
+    color: #fff;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- Firebase SDK initialization -->
+<script>
+  // إعدادات Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyCSZh5rKmpGeF8jEg1oJMME4rN9ftTr3VY",
+    authDomain: "chatsam333-b049e.firebaseapp.com",
+    databaseURL: "https://chatsam333-b049e-default-rtdb.firebaseio.com",
+    projectId: "chatsam333-b049e",
+    storageBucket: "chatsam333-b049e.firebasestorage.app",
+    messagingSenderId: "109894176505",
+    appId: "1:109894176505:web:996c6082fd7b6cac615c28",
+    measurementId: "G-CSGMQWP22Y"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+</script>
+
+<!-- نموذج تسجيل الدخول -->
+<div id="login-container">
+  <h2>تسجيل الدخول</h2>
+  <input type="text" id="username-input" placeholder="اكتب اسمك" />
+  <button id="login-btn">تسجيل الدخول</button>
+</div>
+
+<!-- واجهة الشات -->
+<div id="chat-container">
+  <div id="header">
+    <div id="username-display"></div>
+    <div style="position: relative;">
+      <div id="call-options">
+        <button id="accept-call">قبول</button>
+        <button id="reject-call">رفض</button>
+      </div>
+    </div>
+  </div>
+  <div id="messages"></div>
+  <div id="input-area">
+    <input type="text" id="message-input" placeholder="اكتب رسالتك" />
+    <button id="send-button">إرسال</button>
+  </div>
+</div>
+
+<!-- أصوات -->
+<audio id="ringtone" src="https://assets.mixkit.co/active_storage/sfx/1361/1361-preview.mp3" preload="auto"></audio>
+<audio id="talk-sound" src="https://www.soundjay.com/button/sounds/button-3.mp3" preload="auto"></audio>
+
+<script>
+  const loginContainer = document.getElementById('login-container');
+  const chatContainer = document.getElementById('chat-container');
+
+  const usernameDisplay = document.getElementById('username-display');
+  const usernameInput = document.getElementById('username-input');
+  const loginBtn = document.getElementById('login-btn');
+
+  // عند الضغط على زر تسجيل الدخول
+  loginBtn.onclick = () => {
+    const name = usernameInput.value.trim();
+    if (name !== '') {
+      // عرض الشات وإخفاء صفحة الدخول
+      loginContainer.style.display = 'none';
+      chatContainer.style.display = 'flex';
+
+      // تحديث اسم المستخدم في الواجهة
+      usernameDisplay.textContent = name;
+
+      // هنا يمكنك إضافة أي وظيفة أخرى تريدها عند تسجيل الدخول
+    }
+  };
+
+  // باقي الكود كما هو
+
+  const messagesDiv = document.getElementById('messages');
+  const messageInput = document.getElementById('message-input');
+  const sendButton = document.getElementById('send-button');
+
+  // وظيفة لإرسال رسالة
+  sendButton.onclick = () => {
+    const msg = messageInput.value.trim();
+    if (msg !== '') {
+      const div = document.createElement('div');
+      div.textContent = msg;
+      div.style.margin = '5px 0';
+      div.style.padding = '10px';
+      div.style.backgroundColor = '#fff0f5';
+      div.style.borderRadius = '10px';
+      div.style.alignSelf = 'flex-end';
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      messageInput.value = '';
+    }
+  };
+
+  document.getElementById('message-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      sendButton.onclick();
+    }
+  });
+
+  // باقي الكود الخاص بالمكالمات، WebRTC، وغيرها يمكن أن يبقى كما هو أو أن تضع هنا
+  // إذا أردت، أرسل لي الجزء الذي تريد أن أعدله أو أدمجه بشكل كامل.
+</script>
+
+</body>
+</html>
